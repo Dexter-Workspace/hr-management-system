@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to employees collection
+    match /employees/{document} {
+      allow read, write: if true; // Change this for production
+    }
+    
+    // Allow read/write access to settings
+    match /settings/{document} {
+      allow read, write: if true; // Change this for production
+    }
+  }
+}
