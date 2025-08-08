@@ -1,0 +1,13 @@
+{
+  "name": "hr-management-system",
+  "version": "1.0.0",
+  "description": "Modern HR Management System",
+  "main": "index.html",
+  "scripts": {
+    "start": "firebase serve",
+    "deploy": "firebase deploy"
+  },
+  "dependencies": {
+    "firebase": "^10.0.0"
+  }
+}
