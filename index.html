@@ -1781,12 +1781,12 @@
                 showNotification('❌ Firebase test failed: ' + error.message, 'error');
             }
         }
-            const hrEmail = localStorage.getItem('hrEmail') || 'hr@company.com';
-            let subject, body;
-
         async function sendEmailNotification(type, employee) {
 
-             switch (type) {
+            const hrEmail = localStorage.getItem('hrEmail') || 'hr@company.com';
+            let subject, body;
+            
+            switch (type) {
                 case 'newEmployee':
                     subject = 'New Employee Added';
                     body = `A new employee has been added:\n\nName: ${employee.firstName} ${employee.surname}\nEmployee No: ${employee.empNo}\nDepartment: ${employee.department}\nPosition: ${employee.position}`;
