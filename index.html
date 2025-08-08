@@ -513,6 +513,16 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -1482,53 +1492,258 @@
         }
 
         // Import employees from CSV
-        function importEmployees(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Import employees from CSV
+// Import employees from CSV
+function importEmployees(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const csv = e.target.result;
+            const lines = csv.split('\n').filter(line => line.trim()); // Remove empty lines
             
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const csv = e.target.result;
-                    const lines = csv.split('\n');
-                    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-                    
-                    const importedEmployees = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        if (lines[i].trim()) {
-                            const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
-                            const employee = {
-                                id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
-                            };
-                            
-                            headers.forEach((header, index) => {
-                                const key = header.toLowerCase().replace(/\s+/g, '').replace(/\./g, '');
-                                employee[key] = values[index] || '';
-                            });
-                            
-                            importedEmployees.push(employee);
-                        }
-                    }
-                    
-                    // Save each employee
-                    for (const emp of importedEmployees) {
-                        await saveEmployee(emp);
-                        employees.push(emp);
-                    }
-                    
-                    updateDashboard();
-                    displayEmployees();
-                    
-                    showNotification(`${importedEmployees.length} employees imported successfully!`, 'success');
-                } catch (error) {
-                    showNotification('Error importing file. Please check the format.', 'error');
-                }
+            if (lines.length < 2) {
+                showNotification('CSV file must have headers and at least one data row!', 'error');
+                return;
+            }
+            
+            // Parse headers and clean them
+            const headers = lines[0].split(',').map(h => h.replace(/["'\r\n]/g, '').trim().toLowerCase());
+            console.log('CSV Headers:', headers);
+            
+            // Create field mapping for common variations
+            const fieldMapping = {
+                'employee no': 'empNo',
+                'employeeno': 'empNo',
+                'emp no': 'empNo',
+                'empno': 'empNo',
+                'employee number': 'empNo',
+                'area': 'area',
+                'location': 'area',
+                'area/location': 'area',
+                'division': 'division',
+                'department': 'department',
+                'dept': 'department',
+                'surname': 'surname',
+                'last name': 'surname',
+                'lastname': 'surname',
+                'first name': 'firstName',
+                'firstname': 'firstName',
+                'fname': 'firstName',
+                'middle name': 'middleName',
+                'middlename': 'middleName',
+                'mname': 'middleName',
+                'address': 'address',
+                'tel no': 'telNo',
+                'phone': 'telNo',
+                'telephone': 'telNo',
+                'contact': 'telNo',
+                'birthdate': 'birthdate',
+                'birth date': 'birthdate',
+                'bdate': 'birthdate',
+                'dob': 'birthdate',
+                'gender': 'gender',
+                'sex': 'gender',
+                'civil status': 'civilStatus',
+                'civilstatus': 'civilStatus',
+                'marital status': 'civilStatus',
+                'religion': 'religion',
+                'date hired': 'dateHired',
+                'datehired': 'dateHired',
+                'hire date': 'dateHired',
+                'start date': 'dateHired',
+                'philhealth no': 'philhealth',
+                'philhealth': 'philhealth',
+                'philhealth number': 'philhealth',
+                'tin no': 'tin',
+                'tin': 'tin',
+                'tin number': 'tin',
+                'hdmf no': 'hdmf',
+                'hdmf': 'hdmf',
+                'hdmf number': 'hdmf',
+                'pagibig': 'hdmf',
+                'sss no': 'sss',
+                'sss': 'sss',
+                'sss number': 'sss',
+                'position': 'position',
+                'position title': 'position',
+                'job title': 'position',
+                'title': 'position',
+                'rate code': 'rateCode',
+                'ratecode': 'rateCode',
+                'salary': 'salary',
+                'basic salary': 'salary',
+                'wage': 'salary',
+                'allowance': 'allowance',
+                'allowances': 'allowance',
+                'status': 'status',
+                'employment status': 'status',
+                'date created': 'dateCreated',
+                'datecreated': 'dateCreated',
+                'created date': 'dateCreated'
             };
-            reader.readAsText(file);
             
-            // Reset file input
-            event.target.value = '';
+            const importedEmployees = [];
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Process each data row
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    const line = lines[i];
+                    if (!line.trim()) continue;
+                    
+                    // Handle CSV parsing with potential commas in quoted fields
+                    const values = parseCSVLine(line);
+                    
+                    if (values.length !== headers.length) {
+                        console.warn(`Row ${i + 1}: Column count mismatch. Expected ${headers.length}, got ${values.length}`);
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    const employee = {
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        dateCreated: new Date().toISOString().split('T')[0]
+                    };
+                    
+                    // Map CSV columns to employee fields
+                    headers.forEach((header, index) => {
+                        const fieldName = fieldMapping[header] || header.replace(/\s+/g, '');
+                        let value = values[index] ? values[index].replace(/["'\r\n]/g, '').trim() : '';
+                        
+                        // Convert specific fields
+                        if (fieldName === 'salary' || fieldName === 'allowance') {
+                            value = value ? parseFloat(value.replace(/[,$]/g, '')) || 0 : 0;
+                        } else if (fieldName === 'birthdate' || fieldName === 'dateHired') {
+                            value = formatDate(value);
+                        } else if (fieldName === 'status') {
+                            value = value ? (value.toLowerCase().includes('active') ? 'Active' : 'Inactive') : 'Active';
+                        } else if (fieldName === 'gender') {
+                            value = value ? value.toUpperCase() : '';
+                        } else if (fieldName === 'civilStatus') {
+                            value = value ? value.toUpperCase() : '';
+                        }
+                        
+                        employee[fieldName] = value;
+                    });
+                    
+                    // Validate required fields
+                    if (!employee.empNo || !employee.firstName || !employee.surname) {
+                        console.warn(`Row ${i + 1}: Missing required fields (Employee No, First Name, or Surname)`);
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    // Check for duplicate employee numbers
+                    const existingEmp = employees.find(emp => emp.empNo === employee.empNo);
+                    if (existingEmp) {
+                        console.warn(`Row ${i + 1}: Employee No ${employee.empNo} already exists`);
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    importedEmployees.push(employee);
+                    successCount++;
+                    
+                } catch (rowError) {
+                    console.error(`Error processing row ${i + 1}:`, rowError);
+                    errorCount++;
+                }
+            }
+            
+            if (importedEmployees.length === 0) {
+                showNotification('No valid employees found in the CSV file!', 'error');
+                return;
+            }
+            
+            // Save each employee to Firebase/localStorage
+            for (const emp of importedEmployees) {
+                await saveEmployee(emp);
+                employees.push(emp);
+            }
+            
+            updateDashboard();
+            displayEmployees();
+            
+            const message = `Import completed! ${successCount} employees imported successfully.${errorCount > 0 ? ` ${errorCount} rows had errors.` : ''}`;
+            showNotification(message, successCount > 0 ? 'success' : 'error');
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            showNotification('Error importing file. Please check the CSV format and try again.', 'error');
         }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    event.target.value = '';
+}
+
+// Parse CSV line handling quoted fields with commas
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current); // Add the last field
+    return result;
+}
+
+// Format date strings to YYYY-MM-DD
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    
+    try {
+        // Handle various date formats
+        let date;
+        
+        // Try parsing different formats
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                // Assume MM/DD/YYYY or DD/MM/YYYY
+                let month = parseInt(parts[0]);
+                let day = parseInt(parts[1]);
+                let year = parseInt(parts[2]);
+                
+                if (year < 100) {
+                    year += 2000; // Convert 2-digit year
+                }
+                
+                date = new Date(year, month - 1, day);
+            }
+        } else if (dateStr.includes('-')) {
+            date = new Date(dateStr);
+        } else {
+            date = new Date(dateStr);
+        }
+        
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+        
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        console.warn('Date parsing error:', error);
+        return '';
+    }
+}
 
         // Print employees
         function printEmployees() {
