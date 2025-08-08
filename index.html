@@ -748,18 +748,21 @@
 
                 <table class="employee-table" id="employee-table">
                     <thead>
-                        <tr>
-                            <th>Employee No.</th>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Position</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <tr>
+                        <th>Employee No.</th>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>PhilHealth No.</th>
+                        <th>TIN No.</th>
+                        <th>HDMF No.</th>
+                        <th>SSS No.</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
                     <tbody id="employee-table-body">
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                            <td colspan="9" style="text-align: center; padding: 40px; color: #999;">
                                 <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 15px;"></i><br>
                                 No employees found. Add your first employee!
                             </td>
@@ -1309,48 +1312,55 @@ async function saveEmployee(employee, forceCreate = false) {
         }
 
         // Display employees in table
-        function displayEmployees() {
-            const tbody = document.getElementById('employee-table-body');
-            const searchTerm = document.getElementById('search-employees').value.toLowerCase();
-            
-            if (employees.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                            <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 15px;"></i><br>
-                            No employees found. Add your first employee!
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            const filteredEmployees = employees.filter(emp => {
-                const fullName = `${emp.surname} ${emp.firstName || ''} ${emp.middleName}`.toLowerCase();
-                return fullName.includes(searchTerm) || 
-                       (emp.empNo && emp.empNo.toLowerCase().includes(searchTerm)) ||
-                       (emp.department && emp.department.toLowerCase().includes(searchTerm)) ||
-                       (emp.position && emp.position.toLowerCase().includes(searchTerm));
-            });
-            
-            tbody.innerHTML = filteredEmployees.map(emp => `
-                <tr>
-                    <td>${emp.empNo || 'N/A'}</td>
-                    <td>${emp.surname || ''} ${emp.firstName|| ''} ${emp.middleName || ''}</td>
-                    <td>${emp.department || 'N/A'}</td>
-                    <td>${emp.position || 'N/A'}</td>
-                    <td><span class="status-${(emp.status || 'active').toLowerCase()}">${emp.status || 'Active'}</span></td>
-                    <td>
-                        <button class="btn-secondary" onclick="editEmployee('${emp.id}')">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="btn-danger" onclick="deleteEmployee('${emp.id}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        // Display employees in table
+function displayEmployees() {
+    const tbody = document.getElementById('employee-table-body');
+    const searchTerm = document.getElementById('search-employees').value.toLowerCase();
+    
+    if (employees.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 15px;"></i><br>
+                    No employees found. Add your first employee!
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    const filteredEmployees = employees.filter(emp => {
+        const fullName = `${emp.surname || ''} ${emp.firstName || ''} ${emp.middleName || ''}`.toLowerCase();
+        return fullName.includes(searchTerm) || 
+               (emp.empNo && emp.empNo.toLowerCase().includes(searchTerm)) ||
+               (emp.position && emp.position.toLowerCase().includes(searchTerm)) ||
+               (emp.philhealth && emp.philhealth.toLowerCase().includes(searchTerm)) ||
+               (emp.tin && emp.tin.toLowerCase().includes(searchTerm)) ||
+               (emp.hdmf && emp.hdmf.toLowerCase().includes(searchTerm)) ||
+               (emp.sss && emp.sss.toLowerCase().includes(searchTerm));
+    });
+    
+    tbody.innerHTML = filteredEmployees.map(emp => `
+        <tr>
+            <td>${emp.empNo || 'N/A'}</td>
+            <td>${emp.surname || ''} ${emp.firstName || ''} ${emp.middleName || ''}</td>
+            <td>${emp.position || 'N/A'}</td>
+            <td>${emp.philhealth || 'N/A'}</td>
+            <td>${emp.tin || 'N/A'}</td>
+            <td>${emp.hdmf || 'N/A'}</td>
+            <td>${emp.sss || 'N/A'}</td>
+            <td><span class="status-${(emp.status || 'active').toLowerCase()}">${emp.status || 'Active'}</span></td>
+            <td>
+                <button class="btn-secondary" onclick="editEmployee('${emp.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn-danger" onclick="deleteEmployee('${emp.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
 
         // Update dashboard statistics
         function updateDashboard() {
@@ -1810,10 +1820,13 @@ function formatDate(dateStr) {
                             <tr>
                                 <th>Employee No.</th>
                                 <th>Name</th>
-                                <th>Department</th>
                                 <th>Position</th>
-                                <th>Date Hired</th>
+                                <th>PhilHealth No.</th>
+                                <th>TIN No.</th>
+                                <th>HDMF No.</th>
+                                <th>SSS No.</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
