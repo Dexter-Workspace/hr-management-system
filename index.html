@@ -1215,30 +1215,45 @@
         }
 
         // Save employee (Firebase + localStorage fallback)
-        async function saveEmployee(employee) {
-            try {
-                if (window.firebaseDB && window.addDoc && window.collection) {
-                    if (employee.id && employee.id.length > 20) {
-                        // Update existing employee
-                        await window.updateDoc(window.doc(window.firebaseDB, 'employees', employee.id), employee);
-                    } else {
-                        // Add new employee
-                        const docRef = await window.addDoc(window.collection(window.firebaseDB, 'employees'), employee);
-                        employee.id = docRef.id;
+        // Save employee (Firebase + localStorage fallback)
+            async function saveEmployee(employee) {
+                try {
+                    if (window.firebaseDB && window.addDoc && window.collection) {
+                        // Check if this is an existing Firebase document
+                        const isFirebaseDoc = employee.id && employee.id.length > 15 && !employee.id.includes('.');
+                        
+                        if (isFirebaseDoc && window.updateDoc && window.doc) {
+                            try {
+                                // Try to update existing document
+                                const { id, ...employeeData } = employee; // Remove id from data
+                                await window.updateDoc(window.doc(window.firebaseDB, 'employees', employee.id), employeeData);
+                                console.log('Employee updated in Firebase');
+                            } catch (updateError) {
+                                // If update fails, create new document
+                                console.log('Update failed, creating new document:', updateError.message);
+                                const docRef = await window.addDoc(window.collection(window.firebaseDB, 'employees'), employee);
+                                employee.id = docRef.id;
+                                console.log('New employee created in Firebase');
+                            }
+                        } else {
+                            // Create new employee document
+                            const docRef = await window.addDoc(window.collection(window.firebaseDB, 'employees'), employee);
+                            employee.id = docRef.id;
+                            console.log('Employee added to Firebase');
+                        }
+                        
+                        updateConnectionStatus(true);
+                        return true;
                     }
-                    console.log('Employee saved to Firebase');
-                    updateConnectionStatus(true);
-                    return true;
+                } catch (error) {
+                    console.error('Firebase save failed, using localStorage:', error);
+                    updateConnectionStatus(false);
                 }
-            } catch (error) {
-                console.error('Firebase save failed, using localStorage:', error);
-                updateConnectionStatus(false);
+                
+                // Fallback to localStorage
+                saveEmployeesToLocalStorage();
+                return false;
             }
-            
-            // Fallback to localStorage
-            saveEmployeesToLocalStorage();
-            return false;
-        }
 
         // Save employees to localStorage
         function saveEmployeesToLocalStorage() {
@@ -1410,7 +1425,18 @@
                 }
                 
                 // Save to Firebase/localStorage
-                await saveEmployee(updatedEmployee);
+                try {
+                    if (window.firebaseDB && window.updateDoc && window.doc && isFirebaseConnected) {
+                        const { id, ...employeeData } = updatedEmployee;
+                        await window.updateDoc(window.doc(window.firebaseDB, 'employees', updatedEmployee.id), employeeData);
+                        console.log('Employee updated in Firebase');
+                    } else {
+                        saveEmployeesToLocalStorage();
+                    }
+                } catch (error) {
+                    console.error('Firebase update failed:', error);
+                    saveEmployeesToLocalStorage();
+                }
                 
                 employees[employeeIndex] = updatedEmployee;
                 updateDashboard();
