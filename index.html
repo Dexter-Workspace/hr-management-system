@@ -765,6 +765,15 @@
                 <div class="settings-section">
                     <h3><i class="fas fa-list"></i> Dropdown Lists Management</h3>
                     
+                    <div style="margin-bottom: 20px; text-align: center;">
+                        <button class="btn-primary" onclick="syncWithFirebase()">
+                            <i class="fas fa-sync"></i> Sync with Firebase
+                        </button>
+                        <button class="btn-secondary" onclick="testFirebaseConnection()">
+                            <i class="fas fa-check"></i> Test Connection
+                        </button>
+                    </div>
+                    
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Areas/Locations</label>
@@ -1011,18 +1020,31 @@
 
             // Initialize application
             try {
-                // Wait for Firebase to load
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Wait for Firebase to load properly
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 
+                console.log('🔄 Loading dropdown data...');
                 await loadDropdownDataFromStorage(); // Load from Firebase/storage first
+                
+                console.log('🔄 Populating dropdowns...');
                 loadDropdownData(); // Then populate dropdowns
+                
+                console.log('🔄 Loading employees...');
                 await loadEmployees();
+                
+                console.log('🔄 Updating dashboard...');
                 updateDashboard();
+                
+                console.log('🔄 Loading settings...');
                 loadSettings();
+                
+                console.log('🔄 Setting up search...');
                 setupSearchFilter();
-                console.log('HR Management System initialized successfully');
+                
+                console.log('✅ HR Management System initialized successfully');
+                showNotification('System loaded successfully!', 'success');
             } catch (error) {
-                console.error('Error initializing application:', error);
+                console.error('❌ Error initializing application:', error);
                 showNotification('Error initializing application', 'error');
             }
         });
@@ -1061,29 +1083,40 @@
         async function loadDropdownDataFromStorage() {
             try {
                 // Try to load from Firebase first
-                if (window.firebaseDB && window.getDocs && window.collection) {
+                if (window.firebaseDB && window.getDoc && window.doc) {
                     const docRef = window.doc(window.firebaseDB, 'settings', 'dropdownData');
                     const docSnap = await window.getDoc(docRef);
                     
                     if (docSnap.exists()) {
-                        dropdownData = docSnap.data();
-                        console.log('Dropdown data loaded from Firebase:', dropdownData);
+                        const firebaseData = docSnap.data();
+                        dropdownData = {
+                            areas: firebaseData.areas || dropdownData.areas,
+                            divisions: firebaseData.divisions || dropdownData.divisions,
+                            departments: firebaseData.departments || dropdownData.departments,
+                            positions: firebaseData.positions || dropdownData.positions
+                        };
+                        console.log('✅ Dropdown data loaded from Firebase:', dropdownData);
                         // Save to localStorage as backup
                         localStorage.setItem('hrDropdownData', JSON.stringify(dropdownData));
                         return;
+                    } else {
+                        console.log('⚠️ No dropdown data document found in Firebase, creating one...');
+                        // Create the document with current data
+                        await window.setDoc(docRef, dropdownData);
+                        console.log('✅ Created dropdown data document in Firebase');
                     }
                 }
             } catch (error) {
-                console.error('Failed to load dropdown data from Firebase:', error);
+                console.error('❌ Failed to load dropdown data from Firebase:', error);
             }
             
             // Fallback to localStorage
             const saved = localStorage.getItem('hrDropdownData');
             if (saved) {
                 dropdownData = JSON.parse(saved);
-                console.log('Dropdown data loaded from localStorage');
+                console.log('📦 Dropdown data loaded from localStorage');
             } else {
-                console.log('Using default dropdown data');
+                console.log('🔧 Using default dropdown data');
             }
         }
 
@@ -1706,8 +1739,48 @@
             }, 3000);
         }
 
-        // Email notification simulation
-        function sendEmailNotification(type, employee) {
+        // Manual sync with Firebase
+        async function syncWithFirebase() {
+            showNotification('Syncing with Firebase...', 'info');
+            try {
+                console.log('🔄 Starting manual Firebase sync...');
+                await loadDropdownDataFromStorage();
+                loadDropdownData();
+                showNotification('✅ Successfully synced with Firebase!', 'success');
+            } catch (error) {
+                console.error('❌ Sync failed:', error);
+                showNotification('❌ Sync failed: ' + error.message, 'error');
+            }
+        }
+
+        // Test Firebase connection
+        async function testFirebaseConnection() {
+            showNotification('Testing Firebase connection...', 'info');
+            try {
+                if (!window.firebaseDB) {
+                    throw new Error('Firebase not initialized');
+                }
+
+                if (!window.getDoc || !window.doc) {
+                    throw new Error('Firebase functions not available');
+                }
+
+                const docRef = window.doc(window.firebaseDB, 'settings', 'dropdownData');
+                const docSnap = await window.getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log('✅ Firebase dropdown data:', data);
+                    showNotification('✅ Firebase connected! Found dropdown data.', 'success');
+                } else {
+                    console.log('⚠️ Document does not exist');
+                    showNotification('⚠️ Connected but no dropdown data found.', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Firebase test failed:', error);
+                showNotification('❌ Firebase test failed: ' + error.message, 'error');
+            }
+        }
             const hrEmail = localStorage.getItem('hrEmail') || 'hr@company.com';
             let subject, body;
             
