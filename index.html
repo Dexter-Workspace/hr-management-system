@@ -1248,21 +1248,22 @@
 
         // Load employees from storage
         async function loadEmployees() {
-    try {
-        const querySnapshot = await getDocs(collection(firebaseDB, 'employees'));
-        employees = [];
-        querySnapshot.forEach((doc) => {
-            employees.push({ id: doc.id, ...doc.data() });
-        });
-        console.log('Employees loaded from Firebase:', employees.length);
-    } catch (error) {
-        console.error('Error loading employees:', error);
-        // Fallback to localStorage
-        const saved = localStorage.getItem('hrEmployees');
-        if (saved) {
-            employees = JSON.parse(saved);
+            try {
+                const querySnapshot = await getDocs(collection(firebaseDB, 'employees'));
+                employees = [];
+                querySnapshot.forEach((doc) => {
+                    employees.push({ id: doc.id, ...doc.data() });
+                });
+                console.log('Employees loaded from Firebase:', employees.length);
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                // Fallback to localStorage
+                const saved = localStorage.getItem('hrEmployees');
+                if (saved) {
+                    employees = JSON.parse(saved);
+                }
+            }
         }
-    }
 
 
         // Display employees in table
@@ -1434,7 +1435,6 @@ async function saveEmployee(employee) {
         }
     }
 }
-St
 
         // Close edit modal
         function closeEditModal() {
