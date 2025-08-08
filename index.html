@@ -1336,7 +1336,7 @@ async function saveEmployee(employee, forceCreate = false) {
             tbody.innerHTML = filteredEmployees.map(emp => `
                 <tr>
                     <td>${emp.empNo || 'N/A'}</td>
-                    <td>${emp.firstName || ''} ${emp.middleName || ''} ${emp.surname || ''}</td>
+                    <td>${emp.surname || ''} ${emp.firstName|| ''} ${emp.middleName || ''}</td>
                     <td>${emp.department || 'N/A'}</td>
                     <td>${emp.position || 'N/A'}</td>
                     <td><span class="status-${(emp.status || 'active').toLowerCase()}">${emp.status || 'Active'}</span></td>
