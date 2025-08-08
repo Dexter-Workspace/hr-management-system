@@ -1326,7 +1326,7 @@ async function saveEmployee(employee, forceCreate = false) {
             }
             
             const filteredEmployees = employees.filter(emp => {
-                const fullName = `${emp.firstName} ${emp.middleName || ''} ${emp.surname}`.toLowerCase();
+                const fullName = `${emp.surname} ${emp.firstName || ''} ${emp.middleName}`.toLowerCase();
                 return fullName.includes(searchTerm) || 
                        (emp.empNo && emp.empNo.toLowerCase().includes(searchTerm)) ||
                        (emp.department && emp.department.toLowerCase().includes(searchTerm)) ||
