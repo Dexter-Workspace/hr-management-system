@@ -576,6 +576,11 @@
                         <h3 id="new-hires">0</h3>
                         <p>New Hires This Month</p>
                     </div>
+                    <div class="stat-card">
+                        <i class="fas fa-user-times"></i>
+                        <h3 id="inactive-employees">0</h3>
+                        <p>Inactive Employees</p>
+                    </div>
                 </div>
 
                 <div style="background: rgba(102, 126, 234, 0.05); padding: 25px; border-radius: 15px;">
@@ -1363,6 +1368,7 @@ function displayEmployees() {
         function updateDashboard() {
             const totalEmployees = employees.length;
             const activeEmployees = employees.filter(emp => (emp.status || 'Active') === 'Active').length;
+            const inactiveEmployees = totalEmployees - activeEmployees;
             const departments = [...new Set(employees.map(emp => emp.department).filter(d => d))].length;
             
             const currentMonth = new Date().getMonth();
@@ -1375,11 +1381,13 @@ function displayEmployees() {
             
             document.getElementById('total-employees').textContent = totalEmployees;
             document.getElementById('active-employees').textContent = activeEmployees;
+            document.getElementById('inactive-employees').textContent = inactiveEmployees;
             document.getElementById('total-departments').textContent = departments;
             document.getElementById('new-hires').textContent = newHires;
             
             updateRecentActivities();
         }
+
 
         // Update recent activities
         function updateRecentActivities() {
